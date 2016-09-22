@@ -75,7 +75,7 @@ public class Client {
         mainThread = Thread.currentThread();
         System.out.print("@name ");
         name = new Scanner(System.in).nextLine();
-      //  name = new Scanner(name).useDelimiter("@name\\s*").next();
+        //  name = new Scanner(name).useDelimiter("@name\\s*").next();
         try {
             out.writeUTF(name);
             while (true) {
@@ -84,13 +84,13 @@ public class Client {
                 line = keyboard.readLine();
                 if (socket.isClosed())
                     break;
+                out.writeUTF(line); // отсылаем введенную строку текста серверу.
+                out.flush(); // заставляем поток закончить передачу данных.
                 if (line.equals("@quit")) {
                     listener.interrupt();
                     socketClose();
                     break;
                 }
-                out.writeUTF(line); // отсылаем введенную строку текста серверу.
-                out.flush(); // заставляем поток закончить передачу данных.
             }
         } catch (Exception x) {
             x.printStackTrace();

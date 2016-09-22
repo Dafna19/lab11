@@ -17,8 +17,8 @@ import java.util.Scanner;
  * Программа работает по протоколу UDP.
  */
 /*
-* ЧТО ТАКОЕ SERVERSOCKET?
-* ЧТО ЗНАЧИТ АСИНХРОННОЕ ЧТЕНИЕ?
+* &#x427;&#x422;&#x41e; &#x422;&#x410;&#x41a;&#x41e;&#x415; SERVERSOCKET?
+* &#x427;&#x422;&#x41e; &#x417;&#x41d;&#x410;&#x427;&#x418;&#x422; &#x410;&#x421;&#x418;&#x41d;&#x425;&#x420;&#x41e;&#x41d;&#x41d;&#x41e;&#x415; &#x427;&#x422;&#x415;&#x41d;&#x418;&#x415;?
 * UDP
 * */
 public class Server {
@@ -73,8 +73,9 @@ public class Server {
                     //else e.printStackTrace();
                     //}
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (SocketException e) {//socket closed
+               // e.printStackTrace();
+                close();
             }
         } catch (IOException e) {//внешний
             e.printStackTrace();
@@ -100,7 +101,6 @@ public class Server {
         }
 
         public void run() {
-            boolean broke = false;//delete
             try {
                 out.writeUTF(name);
             } catch (IOException e) {
@@ -116,7 +116,6 @@ public class Server {
                         out.flush(); // заставляем поток закончить передачу данных.
                         if (line.equals("@quit")) {
                             close();
-                            broke = true;//delete
                             break;
                         }
                     }
@@ -129,7 +128,6 @@ public class Server {
                     close();
                 }
             }
-            if (broke) System.out.println("I was broken");//delete
         }
     }
 }
