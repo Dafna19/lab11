@@ -25,7 +25,7 @@ public class Client {
     private Thread listener, mainThread;
 
     public Client(String adr, int port) throws IOException {
-        InetAddress ipAddress = InetAddress.getByName(adr); // создаем объект который отображает вышеописанный IP-адрес.
+        InetAddress ipAddress = InetAddress.getByName(adr); // создаем объект который отображает вышеописанный IP-адрес
         socket = new Socket(ipAddress, port); // создаем сокет используя IP-адрес и порт сервера
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
@@ -41,7 +41,6 @@ public class Client {
                 if (!socket.isClosed())
                     serverName = in.readUTF();
             } catch (IOException e) {
-                System.out.println("123");
                 if ("Socket closed".equals(e.getMessage()))
                     socketClose();
             }
@@ -57,7 +56,6 @@ public class Client {
                     if ("Socket closed".equals(e.getMessage()))
                         break;
                     else e.printStackTrace();
-                    System.out.println("456");
                 }
             }
         }
@@ -68,7 +66,6 @@ public class Client {
             socket.close();
             mainThread.interrupt();
         } catch (IOException e) {
-            System.out.println("789");
             e.printStackTrace();
         }
 
@@ -96,7 +93,6 @@ public class Client {
                 out.flush(); // заставляем поток закончить передачу данных.
             }
         } catch (Exception x) {
-            System.out.println("910");
             x.printStackTrace();
         }
     }

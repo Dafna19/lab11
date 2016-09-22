@@ -16,6 +16,11 @@ import java.util.Scanner;
  * Принятые сообщения автоматически выводятся на экран.
  * Программа работает по протоколу UDP.
  */
+/*
+* ЧТО ТАКОЕ SERVERSOCKET?
+* ЧТО ЗНАЧИТ АСИНХРОННОЕ ЧТЕНИЕ?
+* UDP
+* */
 public class Server {
     private ServerSocket ss;
     private Socket socket;
@@ -27,7 +32,7 @@ public class Server {
 
     public Server(int port) throws IOException {
         ss = new ServerSocket(port);
-      }
+    }
 
     public static void main(String[] args) throws IOException {
         System.out.println("Welcome!");
@@ -41,9 +46,10 @@ public class Server {
         name = new Scanner(System.in).nextLine();
         // name = new Scanner(name).useDelimiter("@name\\s*").next();
         try {
+            //кинуть исключение, чтобы проверить закрытие неотрывшегося сокета
             socket = ss.accept(); // заставляем сервер ждать подключений и выводим сообщение когда кто-то связался с сервером
-            if (socket != null)
-                System.out.println("Please type");
+            //подключились, всё норм
+            System.out.println("Please type");
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
             sender = new Thread(new Sender());
@@ -51,34 +57,38 @@ public class Server {
             // Берем входной и выходной потоки сокета, теперь можем получать и отсылать данные клиенту
             // Конвертируем потоки в другой тип, чтоб легче обрабатывать текстовые сообщения.
             clientName = in.readUTF();
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println("123");
-        }
-        while (!socket.isClosed()) {
-            String line;
             try {
-                line = in.readUTF(); // ожидаем пока клиент пришлет строку текста.
-                System.out.println(clientName + ": " + line);
-            } catch (EOFException e) {
-                System.out.println("client is quited");
-                close();
+                while (true) {
+                    String line;
+                    line = in.readUTF(); // ожидаем пока клиент пришлет строку текста.
+                    if (line.equals("@quit"))
+                        break;
+                    System.out.println(clientName + ": " + line);
+                    // catch (EOFException e) {
+                    //System.out.println("client is quited");
+                    //close();
+                    //} catch (IOException e) {
+                    //if ("Socket closed".equals(e.getMessage()))
+                    //break;
+                    //else e.printStackTrace();
+                    //}
+                }
             } catch (IOException e) {
-                if ("Socket closed".equals(e.getMessage()))
-                    break;
-                else e.printStackTrace();
-                System.out.println("56++");
+                e.printStackTrace();
             }
+        } catch (IOException e) {//внешний
+            e.printStackTrace();
+        } finally {
+            close();
         }
     }
 
     private void close() {
         try {
             ss.close();
-            socket.close();
-            sender.interrupt();//??????????????
+            socket.close();//всё ли норм, если он ещё не открылся?
+            //sender.interrupt();//??????????????
         } catch (IOException e) {
-            System.out.println("465");
             e.printStackTrace();
         }
     }
@@ -90,10 +100,10 @@ public class Server {
         }
 
         public void run() {
+            boolean broke = false;//delete
             try {
                 out.writeUTF(name);
             } catch (IOException e) {
-                System.out.println("45++");
                 e.printStackTrace();
             }
             while (!ss.isClosed()) {
@@ -101,20 +111,25 @@ public class Server {
                 try {
                     // System.out.print(name + ": ");
                     line = keyboard.readLine();
-                    if (line.equals("@quit")) {
-                        close();
-                        break;
-                    }
                     if (line != null || !socket.isClosed()) {
                         out.writeUTF(line);
                         out.flush(); // заставляем поток закончить передачу данных.
+                        if (line.equals("@quit")) {
+                            close();
+                            broke = true;//delete
+                            break;
+                        }
                     }
                 } catch (Exception e) {
-                    System.out.println("789");
+                    if ("Socket closed".equals(e.getMessage())) {
+                        close();
+                        break;
+                    }
                     e.printStackTrace();
                     close();
                 }
             }
+            if (broke) System.out.println("I was broken");//delete
         }
     }
 }
