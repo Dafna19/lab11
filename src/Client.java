@@ -31,40 +31,21 @@ public class Client {
         out = new DataOutputStream(socket.getOutputStream());
         keyboard = new BufferedReader(new InputStreamReader(System.in));
         listener = new Thread(new FromServer());
-        listener.start();// создаем и запускаем нить асинхронного чтения из сокета
+        listener.start();
     }
 
-    private class FromServer implements Runnable {//принимает сообщения
-
-        public void run() {
-            try {
-                if (!socket.isClosed())
-                    serverName = in.readUTF();
-            } catch (IOException e) {
-                if ("Socket closed".equals(e.getMessage()))
-                    socketClose();
-            }
-            while (!socket.isClosed()) {
-                String line;
-                try {
-                    line = in.readUTF(); // ждем пока сервер отошлет строку текста.
-                    System.out.println(serverName + ": " + line);
-                } catch (EOFException e) {
-                    System.out.println("server is quited");
-                    socketClose();
-                } catch (IOException e) {
-                    if ("Socket closed".equals(e.getMessage()))
-                        break;
-                    else e.printStackTrace();
-                }
-            }
-        }
+    public static void main(String[] args) throws IOException {
+        System.out.println("Welcome!");
+        System.out.print("Port # ");
+        int port = new Scanner(System.in).nextInt();// порт, к которому привязывается сервер
+        //String address = "localhost";//"127.0.0.1"// это IP-адрес компьютера, где исполняется наша серверная программа.
+        new Client("localhost", port).run();
     }
 
     private void socketClose() {
         try {
             socket.close();
-            mainThread.interrupt();
+            //listener.interrupt();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -82,12 +63,13 @@ public class Client {
                 String line;
                 // System.out.print(name + ": ");
                 line = keyboard.readLine();
+                //вот здесь он и ждёт ввода после закрытия со стороны сервера
                 if (socket.isClosed())
                     break;
                 out.writeUTF(line); // отсылаем введенную строку текста серверу.
                 out.flush(); // заставляем поток закончить передачу данных.
                 if (line.equals("@quit")) {
-                    listener.interrupt();
+                    // listener.interrupt();
                     socketClose();
                     break;
                 }
@@ -97,11 +79,26 @@ public class Client {
         }
     }
 
-    public static void main(String[] args) throws IOException {
-        System.out.println("Welcome!");
-        System.out.print("Port # ");
-        int port = new Scanner(System.in).nextInt();// порт, к которому привязывается сервер
-        //String address = "localhost";//"127.0.0.1"// это IP-адрес компьютера, где исполняется наша серверная программа.
-        new Client("localhost", port).run();
+    private class FromServer implements Runnable {//принимает сообщения
+
+        public void run() {
+            try {
+                serverName = in.readUTF();
+                while (true) {
+                    String line;
+                    line = in.readUTF(); // ждем пока сервер отошлет строку текста.
+                    if (line.equals("@quit")) {
+                        System.out.println("server is quited");
+                        break;
+                    }
+                    System.out.println(serverName + ": " + line);
+                }
+            } catch (IOException e) {
+                socketClose();
+            } finally {
+                socketClose();
+            }
+        }
     }
+
 }

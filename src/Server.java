@@ -17,8 +17,7 @@ import java.util.Scanner;
  * Программа работает по протоколу UDP.
  */
 /*
-* &#x427;&#x422;&#x41e; &#x422;&#x410;&#x41a;&#x41e;&#x415; SERVERSOCKET?
-* &#x427;&#x422;&#x41e; &#x417;&#x41d;&#x410;&#x427;&#x418;&#x422; &#x410;&#x421;&#x418;&#x41d;&#x425;&#x420;&#x41e;&#x41d;&#x41d;&#x41e;&#x415; &#x427;&#x422;&#x415;&#x41d;&#x418;&#x415;?
+* SERVERSOCKET?
 * UDP
 * */
 public class Server {
@@ -46,8 +45,7 @@ public class Server {
         name = new Scanner(System.in).nextLine();
         // name = new Scanner(name).useDelimiter("@name\\s*").next();
         try {
-            //кинуть исключение, чтобы проверить закрытие неотрывшегося сокета
-            socket = ss.accept(); // заставляем сервер ждать подключений и выводим сообщение когда кто-то связался с сервером
+            socket = ss.accept(); // заставляем сервер ждать подключений и выводим сообщение, когда кто-то связался с сервером
             //подключились, всё норм
             System.out.println("Please type");
             in = new DataInputStream(socket.getInputStream());
@@ -61,11 +59,12 @@ public class Server {
                 while (true) {
                     String line;
                     line = in.readUTF(); // ожидаем пока клиент пришлет строку текста.
-                    if (line.equals("@quit"))
+                    if (line.equals("@quit")) {
+                        System.out.println("client is quited");
                         break;
+                    }
                     System.out.println(clientName + ": " + line);
                     // catch (EOFException e) {
-                    //System.out.println("client is quited");
                     //close();
                     //} catch (IOException e) {
                     //if ("Socket closed".equals(e.getMessage()))
@@ -74,11 +73,13 @@ public class Server {
                     //}
                 }
             } catch (SocketException e) {//socket closed
-               // e.printStackTrace();
+                // e.printStackTrace();
                 close();
             }
         } catch (IOException e) {//внешний
             e.printStackTrace();
+        } catch (Exception v) {
+            System.out.println(v.getMessage());
         } finally {
             close();
         }
@@ -87,8 +88,7 @@ public class Server {
     private void close() {
         try {
             ss.close();
-            socket.close();//всё ли норм, если он ещё не открылся?
-            //sender.interrupt();//??????????????
+            socket.close(); //если он ещё не открылся - NullPointerException
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -111,7 +111,7 @@ public class Server {
                 try {
                     // System.out.print(name + ": ");
                     line = keyboard.readLine();
-                    if (line != null || !socket.isClosed()) {
+                    if (line != null && !socket.isClosed()) {
                         out.writeUTF(line);
                         out.flush(); // заставляем поток закончить передачу данных.
                         if (line.equals("@quit")) {
