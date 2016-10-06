@@ -1,7 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
-
+//now it's in new branch
 /**
  * Написать текстовый чат для двух пользователей на сокетах.
  * Чат должен быть реализован по принципу клиент-сервер.
