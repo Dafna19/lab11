@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
+
 /**
  * Написать текстовый чат для двух пользователей на сокетах.
  * Чат должен быть реализован по принципу клиент-сервер.
@@ -15,9 +16,10 @@ import java.util.Scanner;
  * Принятые сообщения автоматически выводятся на экран.
  * Программа работает по протоколу UDP.
  */
+//java Client port(0) ipAddr(1)
 public class Client {
     private DatagramSocket socket;
-    private String name, serverName;
+    private String name = "client", serverName = "server";
     private BufferedReader keyboard;
     private Thread listener;
     private InetAddress ipAddress;
@@ -34,10 +36,9 @@ public class Client {
 
     public static void main(String[] args) throws IOException {
         System.out.println("Welcome!");
-        System.out.print("Port # ");
-        int port = new Scanner(System.in).nextInt();// порт, к которому привязывается сервер
+        int port = Integer.parseInt(args[0]);// порт, к которому привязывается сервер
         //String address = "localhost";//"127.0.0.1"// это IP-адрес компьютера, где исполняется наша серверная программа.
-        new Client("localhost", port).run();
+        new Client(args[1], port).run();
     }
 
     private void send(String s) throws IOException {//отправляет сообщение
@@ -47,14 +48,11 @@ public class Client {
     }
 
     public void run() {//отправляет на сервер
-        System.out.print("@name ");
-        name = new Scanner(System.in).nextLine();
         try {
             send(name);
             while (true) {
                 String line;
                 line = keyboard.readLine();
-                //вот здесь он и ждёт ввода после закрытия со стороны сервера
                 if (socket.isClosed())
                     break;
                 send(line);
@@ -62,6 +60,8 @@ public class Client {
                     socket.close();
                     break;
                 }
+                if (line.contains("@name"))
+                    name = line.substring("@name".length() + 1);
             }
         } catch (Exception x) {
             x.printStackTrace();
@@ -87,7 +87,10 @@ public class Client {
                         System.out.println("server is quited");
                         break;
                     }
-                    System.out.println(serverName + ": " + line);
+                    if (line.contains("@name"))
+                        serverName = line.substring("@name".length() + 1);
+                    else
+                        System.out.println(serverName + ": " + line);
                 }
             } catch (IOException e) {
                 socket.close();

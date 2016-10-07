@@ -19,7 +19,7 @@ import java.util.Scanner;
 
 public class Server {
     private DatagramSocket socket;
-    private String name, clientName;
+    private String name = "server", clientName = "client";
     private BufferedReader keyboard;
     private Thread sender;
     private InetAddress ipAddress;
@@ -31,8 +31,7 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
         System.out.println("Welcome!");
-        System.out.print("Port # ");
-        int port = new Scanner(System.in).nextInt();
+        int port = Integer.parseInt(args[0]);
         new Server(port).run(); //порт задаёт пользователь
     }
 
@@ -47,8 +46,6 @@ public class Server {
     }
 
     public void run() {//принимает сообщения
-        System.out.print("@name ");
-        name = new Scanner(System.in).nextLine();
         try {
             clientName = read();
             //изначально сервер не знает, куда отправлять
@@ -61,7 +58,10 @@ public class Server {
                     System.out.println("client is quited");
                     break;
                 }
-                System.out.println(clientName + ": " + line);
+                if (line.contains("@name"))
+                    clientName = line.substring("@name".length() + 1);
+                else
+                    System.out.println(clientName + ": " + line);
             }
         } catch (IOException e) {
             socket.close();
@@ -94,6 +94,8 @@ public class Server {
                             socket.close();
                             break;
                         }
+                        if (line.contains("@name"))
+                            name = line.substring("@name".length() + 1);
                     }
                 }
             } catch (IOException e) {
