@@ -27,8 +27,6 @@ public class Server {
 
     public Server(int port) throws IOException {
         socket = new DatagramSocket(port);
-        sender = new Thread(new Sender());
-        sender.start();
     }
 
     public static void main(String[] args) throws IOException {
@@ -40,11 +38,12 @@ public class Server {
 
     private String read() throws IOException {//прием сообщений
         byte[] buf = new byte[1000];
+        //сделать, чтобы строка не была длиной 1000
         DatagramPacket p = new DatagramPacket(buf, buf.length);
         socket.receive(p);
         ipAddress = p.getAddress();
         port = p.getPort();
-        return new String(p.getData());
+        return new String(p.getData(), 0, p.getLength());
     }
 
     public void run() {//принимает сообщения
@@ -52,6 +51,9 @@ public class Server {
         name = new Scanner(System.in).nextLine();
         try {
             clientName = read();
+            //изначально сервер не знает, куда отправлять
+            sender = new Thread(new Sender());
+            sender.start();
             while (true) {
                 String line;
                 line = read(); // ожидаем пока клиент пришлет строку текста.
@@ -62,7 +64,7 @@ public class Server {
                 System.out.println(clientName + ": " + line);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            socket.close();
         } finally {
             socket.close();
         }
@@ -82,9 +84,9 @@ public class Server {
 
         public void run() {
             try {
-               send(name);
-            while (!socket.isClosed()) {
-                String line;
+                send(name);
+                while (!socket.isClosed()) {
+                    String line;
                     line = keyboard.readLine();
                     if (line != null && !socket.isClosed()) {
                         send(line);

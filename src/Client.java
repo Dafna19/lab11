@@ -72,7 +72,7 @@ public class Client {
         byte[] buf = new byte[1000];
         DatagramPacket p = new DatagramPacket(buf, buf.length);
         socket.receive(p);
-        return new String(p.getData());
+        return new String(p.getData(), 0, p.getLength());
     }
 
     private class FromServer implements Runnable {//принимает сообщения
