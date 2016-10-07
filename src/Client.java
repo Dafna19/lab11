@@ -1,7 +1,6 @@
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
-//now it's in new branch
 /**
  * Написать текстовый чат для двух пользователей на сокетах.
  * Чат должен быть реализован по принципу клиент-сервер.
@@ -21,10 +20,13 @@ public class Client {
     private String name, serverName;
     private BufferedReader keyboard;
     private Thread listener;
+    private InetAddress ipAddress;
+    private int port;
 
     public Client(String adr, int port) throws SocketException, UnknownHostException {
-        InetAddress ipAddress = InetAddress.getByName(adr);
-        socket = new DatagramSocket(port, ipAddress); // создаем сокет используя IP-адрес и порт сервера
+        ipAddress = InetAddress.getByName(adr);
+        this.port = port;
+        socket = new DatagramSocket();
         keyboard = new BufferedReader(new InputStreamReader(System.in));
         listener = new Thread(new FromServer());
         listener.start();
@@ -38,31 +40,26 @@ public class Client {
         new Client("localhost", port).run();
     }
 
-    private void socketClose() {
-        try {
-            socket.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+    private void send(String s) throws IOException {//отправляет сообщение
+        byte[] m = s.getBytes();
+        DatagramPacket p = new DatagramPacket(m, m.length, ipAddress, port);//адрес и порт сервера
+        socket.send(p);
     }
 
     public void run() {//отправляет на сервер
         System.out.print("@name ");
         name = new Scanner(System.in).nextLine();
         try {
-            byte[] m = name.getBytes();
-            socket.send(new DatagramPacket(m, m.length));
+            send(name);
             while (true) {
                 String line;
                 line = keyboard.readLine();
                 //вот здесь он и ждёт ввода после закрытия со стороны сервера
                 if (socket.isClosed())
                     break;
-                byte[] mes = line.getBytes();
-                socket.send(new DatagramPacket(mes, mes.length));
+                send(line);
                 if (line.equals("@quit")) {
-                    socketClose();
+                    socket.close();
                     break;
                 }
             }
@@ -70,7 +67,8 @@ public class Client {
             x.printStackTrace();
         }
     }
-    public String read() throws IOException {//прием сообщений
+
+    private String read() throws IOException {//прием сообщений
         byte[] buf = new byte[1000];
         DatagramPacket p = new DatagramPacket(buf, buf.length);
         socket.receive(p);
@@ -92,9 +90,9 @@ public class Client {
                     System.out.println(serverName + ": " + line);
                 }
             } catch (IOException e) {
-                socketClose();
+                socket.close();
             } finally {
-                socketClose();
+                socket.close();
             }
         }
     }

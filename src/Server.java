@@ -16,21 +16,19 @@ import java.util.Scanner;
  * Принятые сообщения автоматически выводятся на экран.
  * Программа работает по протоколу UDP.
  */
-/*
-* SERVERSOCKET?
-* UDP
-* */
+
 public class Server {
-    private ServerSocket ss;
-    private Socket socket;
+    private DatagramSocket socket;
     private String name, clientName;
-    private DataInputStream in;
-    private DataOutputStream out;
     private BufferedReader keyboard;
     private Thread sender;
+    private InetAddress ipAddress;
+    private int port;
 
     public Server(int port) throws IOException {
-        ss = new ServerSocket(port);
+        socket = new DatagramSocket(port);
+        sender = new Thread(new Sender());
+        sender.start();
     }
 
     public static void main(String[] args) throws IOException {
@@ -40,58 +38,40 @@ public class Server {
         new Server(port).run(); //порт задаёт пользователь
     }
 
+    private String read() throws IOException {//прием сообщений
+        byte[] buf = new byte[1000];
+        DatagramPacket p = new DatagramPacket(buf, buf.length);
+        socket.receive(p);
+        ipAddress = p.getAddress();
+        port = p.getPort();
+        return new String(p.getData());
+    }
+
     public void run() {//принимает сообщения
         System.out.print("@name ");
         name = new Scanner(System.in).nextLine();
-        // name = new Scanner(name).useDelimiter("@name\\s*").next();
         try {
-            socket = ss.accept(); // заставляем сервер ждать подключений и выводим сообщение, когда кто-то связался с сервером
-            //подключились, всё норм
-            System.out.println("Please type");
-            in = new DataInputStream(socket.getInputStream());
-            out = new DataOutputStream(socket.getOutputStream());
-            sender = new Thread(new Sender());
-            sender.start();
-            // Берем входной и выходной потоки сокета, теперь можем получать и отсылать данные клиенту
-            // Конвертируем потоки в другой тип, чтоб легче обрабатывать текстовые сообщения.
-            clientName = in.readUTF();
-            try {
-                while (true) {
-                    String line;
-                    line = in.readUTF(); // ожидаем пока клиент пришлет строку текста.
-                    if (line.equals("@quit")) {
-                        System.out.println("client is quited");
-                        break;
-                    }
-                    System.out.println(clientName + ": " + line);
-                    // catch (EOFException e) {
-                    //close();
-                    //} catch (IOException e) {
-                    //if ("Socket closed".equals(e.getMessage()))
-                    //break;
-                    //else e.printStackTrace();
-                    //}
+            clientName = read();
+            while (true) {
+                String line;
+                line = read(); // ожидаем пока клиент пришлет строку текста.
+                if (line.equals("@quit")) {
+                    System.out.println("client is quited");
+                    break;
                 }
-            } catch (SocketException e) {//socket closed
-                // e.printStackTrace();
-                close();
+                System.out.println(clientName + ": " + line);
             }
-        } catch (IOException e) {//внешний
+        } catch (IOException e) {
             e.printStackTrace();
-        } catch (Exception v) {
-            System.out.println(v.getMessage());
         } finally {
-            close();
+            socket.close();
         }
     }
 
-    private void close() {
-        try {
-            ss.close();
-            socket.close(); //если он ещё не открылся - NullPointerException
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void send(String s) throws IOException {//отправляет сообщение
+        byte[] m = s.getBytes();
+        DatagramPacket p = new DatagramPacket(m, m.length, ipAddress, port);//адрес и порт сервера
+        socket.send(p);
     }
 
     private class Sender implements Runnable {//отправляет сообщения
@@ -102,31 +82,20 @@ public class Server {
 
         public void run() {
             try {
-                out.writeUTF(name);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            while (!ss.isClosed()) {
+               send(name);
+            while (!socket.isClosed()) {
                 String line;
-                try {
-                    // System.out.print(name + ": ");
                     line = keyboard.readLine();
                     if (line != null && !socket.isClosed()) {
-                        out.writeUTF(line);
-                        out.flush(); // заставляем поток закончить передачу данных.
+                        send(line);
                         if (line.equals("@quit")) {
-                            close();
+                            socket.close();
                             break;
                         }
                     }
-                } catch (Exception e) {
-                    if ("Socket closed".equals(e.getMessage())) {
-                        close();
-                        break;
-                    }
-                    e.printStackTrace();
-                    close();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
