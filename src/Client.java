@@ -17,18 +17,14 @@ import java.util.Scanner;
  * Программа работает по протоколу UDP.
  */
 public class Client {
-    private Socket socket;
+    private DatagramSocket socket;
     private String name, serverName;
-    private DataInputStream in;
-    private DataOutputStream out;
     private BufferedReader keyboard;
-    private Thread listener, mainThread;
+    private Thread listener;
 
-    public Client(String adr, int port) throws IOException {
-        InetAddress ipAddress = InetAddress.getByName(adr); // создаем объект который отображает вышеописанный IP-адрес
-        socket = new Socket(ipAddress, port); // создаем сокет используя IP-адрес и порт сервера
-        in = new DataInputStream(socket.getInputStream());
-        out = new DataOutputStream(socket.getOutputStream());
+    public Client(String adr, int port) throws SocketException, UnknownHostException {
+        InetAddress ipAddress = InetAddress.getByName(adr);
+        socket = new DatagramSocket(port, ipAddress); // создаем сокет используя IP-адрес и порт сервера
         keyboard = new BufferedReader(new InputStreamReader(System.in));
         listener = new Thread(new FromServer());
         listener.start();
@@ -45,31 +41,27 @@ public class Client {
     private void socketClose() {
         try {
             socket.close();
-            //listener.interrupt();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
 
     public void run() {//отправляет на сервер
-        mainThread = Thread.currentThread();
         System.out.print("@name ");
         name = new Scanner(System.in).nextLine();
-        //  name = new Scanner(name).useDelimiter("@name\\s*").next();
         try {
-            out.writeUTF(name);
+            byte[] m = name.getBytes();
+            socket.send(new DatagramPacket(m, m.length));
             while (true) {
                 String line;
-                // System.out.print(name + ": ");
                 line = keyboard.readLine();
                 //вот здесь он и ждёт ввода после закрытия со стороны сервера
                 if (socket.isClosed())
                     break;
-                out.writeUTF(line); // отсылаем введенную строку текста серверу.
-                out.flush(); // заставляем поток закончить передачу данных.
+                byte[] mes = line.getBytes();
+                socket.send(new DatagramPacket(mes, mes.length));
                 if (line.equals("@quit")) {
-                    // listener.interrupt();
                     socketClose();
                     break;
                 }
@@ -78,15 +70,21 @@ public class Client {
             x.printStackTrace();
         }
     }
+    public String read() throws IOException {//прием сообщений
+        byte[] buf = new byte[1000];
+        DatagramPacket p = new DatagramPacket(buf, buf.length);
+        socket.receive(p);
+        return new String(p.getData());
+    }
 
     private class FromServer implements Runnable {//принимает сообщения
 
         public void run() {
             try {
-                serverName = in.readUTF();
+                serverName = read();
                 while (true) {
                     String line;
-                    line = in.readUTF(); // ждем пока сервер отошлет строку текста.
+                    line = read(); // ждем пока сервер отошлет строку текста.
                     if (line.equals("@quit")) {
                         System.out.println("server is quited");
                         break;
