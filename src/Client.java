@@ -49,7 +49,6 @@ public class Client {
 
     public void run() {//отправляет на сервер
         try {
-            send(name);
             while (true) {
                 String line;
                 line = keyboard.readLine();
@@ -79,7 +78,6 @@ public class Client {
 
         public void run() {
             try {
-                serverName = read();
                 while (true) {
                     String line;
                     line = read(); // ждем пока сервер отошлет строку текста.

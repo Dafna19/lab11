@@ -16,6 +16,8 @@ import java.util.Scanner;
  * Принятые сообщения автоматически выводятся на экран.
  * Программа работает по протоколу UDP.
  */
+/*
+* файл с логинами и паролями пользователей*/
 
 public class Server {
     private DatagramSocket socket;
@@ -47,10 +49,9 @@ public class Server {
 
     public void run() {//принимает сообщения
         try {
-            clientName = read();
             //изначально сервер не знает, куда отправлять
-            sender = new Thread(new Sender());
-            sender.start();
+            //sender = new Thread(new Sender());
+            //sender.start();
             while (true) {
                 String line;
                 line = read(); // ожидаем пока клиент пришлет строку текста.
@@ -60,8 +61,10 @@ public class Server {
                 }
                 if (line.contains("@name"))
                     clientName = line.substring("@name".length() + 1);
-                else
+                else {
+                    send(line);
                     System.out.println(clientName + ": " + line);
+                }
             }
         } catch (IOException e) {
             socket.close();
