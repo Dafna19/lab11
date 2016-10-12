@@ -39,7 +39,6 @@ public class Server {
 
     private String read() throws IOException {//прием сообщений
         byte[] buf = new byte[1000];
-        //сделать, чтобы строка не была длиной 1000
         DatagramPacket p = new DatagramPacket(buf, buf.length);
         socket.receive(p);
         ipAddress = p.getAddress();
@@ -50,8 +49,8 @@ public class Server {
     public void run() {//принимает сообщения
         try {
             //изначально сервер не знает, куда отправлять
-            //sender = new Thread(new Sender());
-            //sender.start();
+            sender = new Thread(new Sender());
+            sender.start();
             while (true) {
                 String line;
                 line = read(); // ожидаем пока клиент пришлет строку текста.
@@ -75,7 +74,7 @@ public class Server {
 
     private void send(String s) throws IOException {//отправляет сообщение
         byte[] m = s.getBytes();
-        DatagramPacket p = new DatagramPacket(m, m.length, ipAddress, port);//адрес и порт сервера
+        DatagramPacket p = new DatagramPacket(m, m.length, ipAddress, port);//адрес и порт клиента
         socket.send(p);
     }
 
@@ -87,7 +86,6 @@ public class Server {
 
         public void run() {
             try {
-                send(name);
                 while (!socket.isClosed()) {
                     String line;
                     line = keyboard.readLine();
